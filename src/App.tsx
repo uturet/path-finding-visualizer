@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, useEffect} from 'react';
+import React, {useState, useMemo, useRef, useEffect, useCallback} from 'react';
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
@@ -19,13 +19,8 @@ function App() {
   const [disabledCells, setDisabledCells] = useState<Set<number>>(new Set());
   const [usedCells, setUsedCells] = useState<Set<number>>(new Set());
   const fieldRef = useRef<HTMLDivElement>(null);
-  const cellTypeDispatch = {
-    'start': (index: number) => setStartPoint(index),
-    'end': (index: number) => setEndPoint(index),
-    'disabled': (index: number) => setDisabledCells(new Set(disabledCells.add(index))),
-    'used': (index: number) => setUsedCells(new Set(usedCells.add(index))),
-  };
-  const getCellType = (index: number): CellType => {
+
+  const getCellType = useCallback((index: number): CellType => {
     if (disabledCells.has(index)) {
       return 'disabled';
     } else if (index === startPoint) {
@@ -36,14 +31,28 @@ function App() {
       return 'used';
     }
     return 'default';
-  };
+  }, [disabledCells, usedCells, startPoint, endPoint]);
 
-  const changeCellType = (index: number) => {
+  const changeCellType = useCallback((index: number) => {
+    const cellTypeDispatch = {
+      'start': (index: number) => setStartPoint(index),
+      'end': (index: number) => setEndPoint(index),
+      'disabled': (index: number) => setDisabledCells(new Set(disabledCells.add(index))),
+      'used': (index: number) => setUsedCells(new Set(usedCells.add(index))),
+    };
     const curType = getCellType(index);
-    if (curType == 'default' && cellType != 'default') {
+    if (cellType == 'default' && curType == 'disabled') {
+      disabledCells.delete(index);
+      setDisabledCells(new Set(disabledCells));
+    } else if (curType == 'default' && cellType != 'default') {
+      cellTypeDispatch[cellType](index);
+    } else if (cellType == 'start' || cellType == 'end') {
+      disabledCells.delete(index);
+      setDisabledCells(new Set(disabledCells));
       cellTypeDispatch[cellType](index);
     }
-  };
+  }, [disabledCells, usedCells, cellType, getCellType]);
+
   const cells = useMemo(() => {
     const cells = [];
     for (let i=0; i<amount; i++) {
@@ -53,8 +62,7 @@ function App() {
         className={`w-10 h-10 m-1 rounded ${colorType[getCellType(i)]}`}/>);
     }
     return cells;
-  }, [amount, startPoint, endPoint, disabledCells, usedCells, changeCellType, getCellType]);
-
+  }, [amount, changeCellType, getCellType]);
 
   useEffect(() => {
     if (!fieldRef.current) return;
@@ -77,7 +85,6 @@ function App() {
         {cells}
       </div>
     </div>
-
   );
 }
 
