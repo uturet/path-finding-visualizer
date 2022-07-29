@@ -1,8 +1,9 @@
 import React, {useState, useMemo, useRef, useEffect, useCallback} from 'react';
+import {AlgorithInterface, BFSAlgorithm, Point} from './Algorithm';
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
-const cellSize = 44;
+const cellSize = 48;
 const colorType: { disabled: string; start: string; end: string; used: string; default: string; } = {
   disabled: 'bg-slate-400',
   start: 'bg-red-400',
@@ -12,9 +13,12 @@ const colorType: { disabled: string; start: string; end: string; used: string; d
 };
 const cellTypes: CellType[] = ['start', 'end', 'disabled', 'used', 'default'];
 function App() {
-  const [count, setCount] = useState<number>(0);
+  const [algo, setAlgo] = useState<AlgorithInterface|null>(null);
+  const [count, setCount] = useState<number>(1);
   const [started, setStarted] = useState<boolean>(false);
   const [amount, setAmount] = useState<number>(0);
+  const [width, setWidth] = useState<number>(0);
+  const [height, setHeight] = useState<number>(0);
   const [cellType, setCellType] = useState<CellType>('start');
   const [startPoint, setStartPoint] = useState<number>(0);
   const [endPoint, setEndPoint] = useState<number>(1);
@@ -22,10 +26,33 @@ function App() {
   const [usedCells, setUsedCells] = useState<Set<number>>(new Set());
   const fieldRef = useRef<HTMLDivElement>(null);
 
+  const indexToPoint = (index: number): Point => {
+    const y = Math.floor(index/height);
+    const x = index - y*width;
+    return [x, y];
+  };
+
+  const usePoint = (point: Point): void => {
+    const index = (point[1] * width) + point[0];
+    setUsedCells(new Set(usedCells.add(index)));
+  };
+
   useEffect(() => {
     if (!fieldRef.current) return;
-    setAmount(Math.floor((fieldRef.current.offsetWidth / cellSize)-2) * (Math.floor(fieldRef.current.offsetHeight / cellSize)-2));
+    setWidth(Math.floor((fieldRef.current.offsetWidth / cellSize)));
+    setHeight(Math.floor((fieldRef.current.offsetHeight / cellSize)));
+    setAmount(Math.floor((fieldRef.current.offsetWidth / cellSize)) * (Math.floor(fieldRef.current.offsetHeight / cellSize)));
   }, [fieldRef]);
+
+  useEffect(() => {
+    setAlgo(new BFSAlgorithm(
+      width,
+      height,
+      indexToPoint(startPoint),
+      indexToPoint(endPoint),
+      usePoint,
+    ));
+  }, [width, height]);
 
   const getCellType = useCallback((index: number): CellType => {
     if (disabledCells.has(index)) {
@@ -72,17 +99,18 @@ function App() {
   }, [amount, changeCellType, getCellType]);
 
   const startSearch = () => {
+    setCount(1);
+    setUsedCells(new Set());
     setStarted(!started);
   };
 
   useEffect(() => {
-    if (!started) {
-      setCount(0);
-      return;
-    }
+    if (!started || !algo) return;
     setTimeout(() => {
       setCount((prev) => prev+1);
-    }, 300);
+    }, 100);
+
+    if (algo.nextStep(count)) setStarted(false);
   }, [count, started]);
 
   return (
@@ -101,9 +129,7 @@ function App() {
           className='h-10 m-1 rounded bg-cyan-400 px-3 text-white font-bold flex items-center hover:bg-cyan-600 pointer'>
           <span>{started? 'Stop': 'Start'}</span>
         </div>
-        <div
-          onClick={startSearch}
-          className='h-10 m-1 px-3 rounded font-bold flex items-center border'>
+        <div className='h-10 m-1 px-3 rounded font-bold flex items-center border'>
           <span>{count}</span>
         </div>
       </div>
