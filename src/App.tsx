@@ -12,6 +12,8 @@ const colorType: { disabled: string; start: string; end: string; used: string; d
 };
 const cellTypes: CellType[] = ['start', 'end', 'disabled', 'used', 'default'];
 function App() {
+  const [count, setCount] = useState<number>(0);
+  const [started, setStarted] = useState<boolean>(false);
   const [amount, setAmount] = useState<number>(0);
   const [cellType, setCellType] = useState<CellType>('start');
   const [startPoint, setStartPoint] = useState<number>(0);
@@ -19,6 +21,11 @@ function App() {
   const [disabledCells, setDisabledCells] = useState<Set<number>>(new Set());
   const [usedCells, setUsedCells] = useState<Set<number>>(new Set());
   const fieldRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!fieldRef.current) return;
+    setAmount(Math.floor((fieldRef.current.offsetWidth / cellSize)-2) * (Math.floor(fieldRef.current.offsetHeight / cellSize)-2));
+  }, [fieldRef]);
 
   const getCellType = useCallback((index: number): CellType => {
     if (disabledCells.has(index)) {
@@ -64,10 +71,19 @@ function App() {
     return cells;
   }, [amount, changeCellType, getCellType]);
 
+  const startSearch = () => {
+    setStarted(!started);
+  };
+
   useEffect(() => {
-    if (!fieldRef.current) return;
-    setAmount(Math.floor((fieldRef.current.offsetWidth / cellSize)-2) * (Math.floor(fieldRef.current.offsetHeight / cellSize)-2));
-  }, [fieldRef]);
+    if (!started) {
+      setCount(0);
+      return;
+    }
+    setTimeout(() => {
+      setCount((prev) => prev+1);
+    }, 300);
+  }, [count, started]);
 
   return (
     <div className='w-screen h-screen flex flex-col overflow-hidden'>
@@ -80,6 +96,16 @@ function App() {
             onClick={() => setCellType(t)}
             className={`w-10 h-10 m-1 rounded ${cellType == t && 'drop-shadow-md border-2'} border-slate-700 ${colorType[t]}`}/>;
         })}
+        <div
+          onClick={startSearch}
+          className='h-10 m-1 rounded bg-cyan-400 px-3 text-white font-bold flex items-center hover:bg-cyan-600 pointer'>
+          <span>{started? 'Stop': 'Start'}</span>
+        </div>
+        <div
+          onClick={startSearch}
+          className='h-10 m-1 px-3 rounded font-bold flex items-center border'>
+          <span>{count}</span>
+        </div>
       </div>
       <div ref={fieldRef} className='flex-grow h-full flex flex-row flex-wrap p-3'>
         {cells}
