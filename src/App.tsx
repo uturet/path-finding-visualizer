@@ -3,6 +3,7 @@ import {AlgorithInterface, BFSAlgorithm, Point} from './Algorithm';
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
+const TIMEOUT = 10;
 const cellSize = 48;
 const colorType: { disabled: string; start: string; end: string; used: string; default: string; } = {
   disabled: 'bg-slate-400',
@@ -12,6 +13,7 @@ const colorType: { disabled: string; start: string; end: string; used: string; d
   default: 'bg-yellow-400',
 };
 const cellTypes: CellType[] = ['start', 'end', 'disabled', 'used', 'default'];
+
 function App() {
   const [algo, setAlgo] = useState<AlgorithInterface|null>(null);
   const [count, setCount] = useState<number>(1);
@@ -26,18 +28,13 @@ function App() {
   const [usedCells, setUsedCells] = useState<Set<number>>(new Set());
   const fieldRef = useRef<HTMLDivElement>(null);
 
-  const indexToPoint = (index: number): Point => {
-    const y = Math.floor(index/width);
-    const x = index - y*width;
-    return [x, y];
-  };
-
   const usePoint = useCallback((point: Point): boolean => {
+    if (point[0] < 0 || point[0] >= width || point[1] < 0 || point[1] >= height) return false;
     const index = (point[1] * width) + point[0];
     if (disabledCells.has(index)) return false;
     setUsedCells((prev) => new Set(prev.add(index)));
     return true;
-  }, [disabledCells, width]);
+  }, [disabledCells, width, height]);
 
   useEffect(() => {
     if (!fieldRef.current) return;
@@ -94,8 +91,8 @@ function App() {
     setAlgo(new BFSAlgorithm(
       width,
       height,
-      indexToPoint(startPoint),
-      indexToPoint(endPoint),
+      startPoint,
+      endPoint,
       usePoint,
     ));
     setCount(1);
@@ -107,7 +104,7 @@ function App() {
     if (!started || !algo) return;
     const timeout = setTimeout(() => {
       setCount((prev) => prev+1);
-    }, 100);
+    }, TIMEOUT);
 
     if (algo.nextStep(count)) {
       clearTimeout(timeout);

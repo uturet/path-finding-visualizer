@@ -5,72 +5,73 @@ export interface AlgorithInterface {
     nextStep: (count: number) => boolean
 }
 
+
 abstract class Algorithm implements AlgorithInterface {
   protected width: number;
   protected height: number;
   protected startPoint: Point;
   protected endPoint: Point;
   protected usePoint: (point: Point) => boolean;
+  protected usedCells: Set<number>;
 
-  constructor(width: number, height: number, startPoint: Point, endPoint: Point, usePoint: (pos: Point) => boolean) {
-    console.log(startPoint, endPoint);
+  constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
     this.width = width;
     this.height = height;
-    this.startPoint = startPoint;
-    this.endPoint = endPoint;
+    this.startPoint = this.indexToPoint(startPoint);
+    this.endPoint = this.indexToPoint(endPoint);
     this.usePoint = usePoint;
+    this.usedCells = new Set<number>();
+  }
+
+  indexToPoint(index: number): Point {
+    const y = Math.floor(index/this.width);
+    const x = index - y*this.width;
+    return [x, y];
+  }
+
+  pointToIndex(point: Point): number {
+    return (point[1] * this.width) + point[0];
+  }
+
+  isValidPoint(point: Point): boolean {
+    return point[0] > -1 && point[0] < this.width && point[1] > -1 && point[1] < this.height;
   }
 
   abstract nextStep(count: number): boolean
 }
 
 export class BFSAlgorithm extends Algorithm {
-  private steps = 1;
-  private curStep = 0;
-  private doc = [[1, -1, 0, 1], [1, 1, -1, 0], [-1, 1, 0, -1], [-1, -1, 1, 0]]; // [StartPoint, Direction]
-  private curDocIndex = 0;
-  private curDoc = this.doc[this.curDocIndex];
+  private around = [[1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1]];
+  private nextPoints: Set<number>;
+
+  constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
+    super(width, height, startPoint, endPoint, usePoint);
+    this.nextPoints = new Set();
+    this.nextPoints.add(this.pointToIndex(this.startPoint));
+  }
 
   nextStep(count: number): boolean {
-    let point: Point = [
-      this.startPoint[0]+this.curDoc[0]*this.steps+this.curDoc[2]*this.curStep,
-      this.startPoint[1]+this.curDoc[1]*this.steps+this.curDoc[3]*this.curStep,
-    ];
-
-
-    if (this.usePoint(point)) {
-      this.curStep++;
-
-      if (this.curStep == this.steps*2) {
-        this.curStep = 0;
-        this.curDocIndex++;
-        if (this.curDocIndex > 3) {
-          this.curDocIndex = 0;
-          this.steps++;
-        }
-        this.curDoc = this.doc[this.curDocIndex];
-      }
-    } else {
-      while (!this.usePoint(point)) {
-        point = [
-          this.startPoint[0]+this.curDoc[0]*this.steps+this.curDoc[2]*this.curStep,
-          this.startPoint[1]+this.curDoc[1]*this.steps+this.curDoc[3]*this.curStep,
-        ];
-
-        this.curStep++;
-
-        if (this.curStep == this.steps*2) {
-          this.curStep = 0;
-          this.curDocIndex++;
-          if (this.curDocIndex > 3) {
-            this.curDocIndex = 0;
-            this.steps++;
-          }
-          this.curDoc = this.doc[this.curDocIndex];
-        }
-      }
+    let index: number|undefined = this.nextPoints.keys().next().value;
+    if (index === undefined) return true;
+    let point = this.indexToPoint(index);
+    if (point[0] == this.endPoint[0] && point[1] == this.endPoint[1]) return true;
+    this.nextPoints.delete(index);
+    while (this.usedCells.has(index) || !this.usePoint(point)) {
+      index = this.nextPoints.keys().next().value;
+      if (index === undefined) return true;
+      point = this.indexToPoint(index);
+      if (point[0] == this.endPoint[0] && point[1] == this.endPoint[1]) return true;
+      this.nextPoints.delete(index);
     }
+    this.usedCells.add(index);
 
-    return point[0] == this.endPoint[0] && point[1] == this.endPoint[1];
+    this.around.forEach((shift) => {
+      const p: Point = [point[0]+shift[0], point[1]+shift[1]];
+      if (this.isValidPoint(p)) {
+        this.nextPoints.add(this.pointToIndex(p));
+      }
+    });
+
+    return false;
   }
 }
