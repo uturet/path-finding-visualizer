@@ -136,12 +136,16 @@ export class AstarAlgorithm extends Algorithm {
     this.around.forEach((shift) => {
       const p: Point = [node.point[0]+shift[0], node.point[1]+shift[1]];
       const index = this.pointToIndex(p);
-      if (this.isValidPoint(p) && !this.openList.has(index) && !this.closedList.has(index) && this.usePoint(p)) {
+      if (this.usePoint(p) && this.isValidPoint(p)) {
         const n = new Box(index, p, node.index);
-        n.g = node.g + 1;
+        n.g = node.g;
         n.h = ((n.point[0] - this.endNode.point[0])**2) + ((n.point[1] - this.endNode.point[1])**2);
         n.f = node.g + node.h;
-        this.openList.set(n.index, n);
+        if (this.closedList.has(n.index)) {
+          if ((this.closedList.get(n.index) as Box).f > n.f) this.closedList.set(n.index, n);
+        } else if (this.openList.has(n.index)) {
+          if ((this.openList.get(n.index) as Box).f > n.f) this.openList.set(n.index, n);
+        } else this.openList.set(n.index, n);
       }
     });
   }
