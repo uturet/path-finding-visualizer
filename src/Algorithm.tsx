@@ -7,6 +7,7 @@ export interface AlgorithInterface {
 
 
 abstract class Algorithm implements AlgorithInterface {
+  static title: string;
   protected width: number;
   protected height: number;
   protected startPoint: Point;
@@ -41,6 +42,7 @@ abstract class Algorithm implements AlgorithInterface {
 }
 
 export class BFSAlgorithm extends Algorithm {
+  static title = 'BFS';
   private around = [[1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1]];
   private nextPoints: Set<number>;
 
@@ -73,5 +75,12 @@ export class BFSAlgorithm extends Algorithm {
     });
 
     return false;
+  }
+}
+
+export class AstarAlgorithm extends Algorithm {
+  static title = 'A*';
+  nextStep(count: number) {
+    return true;
   }
 }

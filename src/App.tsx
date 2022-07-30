@@ -1,10 +1,10 @@
 import React, {useState, useMemo, useRef, useEffect, useCallback} from 'react';
-import {AlgorithInterface, BFSAlgorithm, Point} from './Algorithm';
+import {AlgorithInterface, BFSAlgorithm, AstarAlgorithm, Point} from './Algorithm';
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
 const TIMEOUT = 10;
-const cellSize = 48;
+const CELLSIZE = 48;
 const colorType: { disabled: string; start: string; end: string; used: string; default: string; } = {
   disabled: 'bg-slate-400',
   start: 'bg-red-400',
@@ -12,6 +12,10 @@ const colorType: { disabled: string; start: string; end: string; used: string; d
   used: 'bg-cyan-400',
   default: 'bg-yellow-400',
 };
+const algorithms = [
+  BFSAlgorithm,
+  AstarAlgorithm,
+];
 const cellTypes: CellType[] = ['start', 'end', 'disabled', 'used', 'default'];
 
 function App() {
@@ -28,6 +32,7 @@ function App() {
   const [disabledCells, setDisabledCells] = useState<Set<number>>(new Set());
   const [usedCells, setUsedCells] = useState<Set<number>>(new Set());
   const fieldRef = useRef<HTMLDivElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
 
   const usePoint = useCallback((point: Point): boolean => {
     if (point[0] < 0 || point[0] >= width || point[1] < 0 || point[1] >= height) return false;
@@ -82,7 +87,8 @@ function App() {
   }, [amount, changeCellType, getCellType]);
 
   const startSearch = () => {
-    setAlgo(new BFSAlgorithm(
+    if (!selectRef.current) return;
+    setAlgo(new algorithms[parseInt(selectRef.current.value)](
       width,
       height,
       startPoint,
@@ -103,9 +109,9 @@ function App() {
 
   useEffect(() => {
     if (!fieldRef.current) return;
-    let width = fieldRef.current.offsetWidth / cellSize;
+    let width = fieldRef.current.offsetWidth / CELLSIZE;
     width = width%10 == 0? width-1: Math.floor(width);
-    const height = Math.floor(fieldRef.current.offsetHeight / cellSize);
+    const height = Math.floor(fieldRef.current.offsetHeight / CELLSIZE);
     setWidth(width);
     setHeight(height);
     setAmount(width*height);
@@ -115,8 +121,8 @@ function App() {
     if (!fill) return;
     const mouseEvent = (event: MouseEvent) => {
       if (!fieldRef.current) return;
-      const x = Math.floor((event.clientX-12)/cellSize);
-      const y = Math.floor(((event.clientY-12)-fieldRef.current.offsetTop)/cellSize);
+      const x = Math.floor((event.clientX-12)/CELLSIZE);
+      const y = Math.floor(((event.clientY-12)-fieldRef.current.offsetTop)/CELLSIZE);
       if (y > -1) changeCellType((y * width) + x);
     };
     addEventListener('mousemove', mouseEvent);
@@ -152,6 +158,11 @@ function App() {
   return (
     <div className='w-screen h-screen flex flex-col overflow-hidden'>
       <div className='h=[30px] flex flex-row items-center justify-center'>
+        <div className='h-10 m-1 px-3 text-white font-bold flex items-center'>
+          <select ref={selectRef} className='h-10 bg-cyan-400' name="algorithms" id="algorithms">
+            {algorithms.map((a, i) => <option key={a.title} value={i}>{a.title}</option>)}
+          </select>
+        </div>
         {cellTypes.map((t) => {
           if (t == 'used') return null;
           return <div
