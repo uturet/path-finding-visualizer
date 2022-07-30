@@ -94,6 +94,13 @@ function App() {
     setStarted(!started);
   };
 
+  const clear = () => {
+    if (started) return;
+    setCount(0);
+    setUsedCells(new Set());
+    setDisabledCells(new Set());
+  };
+
   useEffect(() => {
     if (!fieldRef.current) return;
     let width = fieldRef.current.offsetWidth / cellSize;
@@ -157,6 +164,11 @@ function App() {
           onClick={startSearch}
           className='h-10 m-1 rounded bg-cyan-400 px-3 text-white font-bold flex items-center hover:bg-cyan-600 pointer'>
           <span>{started? 'Stop': 'Start'}</span>
+        </div>
+        <div
+          onClick={clear}
+          className='h-10 m-1 rounded bg-cyan-400 px-3 text-white font-bold flex items-center hover:bg-cyan-600 pointer'>
+          <span>Clear</span>
         </div>
         <div className='h-10 m-1 px-3 rounded font-bold flex items-center border'>
           <span>{count}</span>
