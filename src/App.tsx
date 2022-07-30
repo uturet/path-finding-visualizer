@@ -15,6 +15,7 @@ const colorType: { disabled: string; start: string; end: string; used: string; d
 const cellTypes: CellType[] = ['start', 'end', 'disabled', 'used', 'default'];
 
 function App() {
+  const [fill, setFill] = useState<boolean>(false);
   const [algo, setAlgo] = useState<AlgorithInterface|null>(null);
   const [count, setCount] = useState<number>(1);
   const [started, setStarted] = useState<boolean>(false);
@@ -35,16 +36,6 @@ function App() {
     setUsedCells((prev) => new Set(prev.add(index)));
     return true;
   }, [disabledCells, width, height]);
-
-  useEffect(() => {
-    if (!fieldRef.current) return;
-    let width = fieldRef.current.offsetWidth / cellSize;
-    width = width%10 == 0? width-1: Math.floor(width);
-    const height = Math.floor(fieldRef.current.offsetHeight / cellSize);
-    setWidth(width);
-    setHeight(height);
-    setAmount(width*height);
-  }, [fieldRef]);
 
   const getCellType = useCallback((index: number): CellType => {
     if (disabledCells.has(index)) {
@@ -102,6 +93,42 @@ function App() {
     setUsedCells(new Set());
     setStarted(!started);
   };
+
+  useEffect(() => {
+    if (!fieldRef.current) return;
+    let width = fieldRef.current.offsetWidth / cellSize;
+    width = width%10 == 0? width-1: Math.floor(width);
+    const height = Math.floor(fieldRef.current.offsetHeight / cellSize);
+    setWidth(width);
+    setHeight(height);
+    setAmount(width*height);
+  }, [fieldRef]);
+
+  useEffect(() => {
+    if (!fill) return;
+    const mouseEvent = (event: MouseEvent) => {
+      if (!fieldRef.current) return;
+      const x = Math.floor((event.clientX-12)/cellSize);
+      const y = Math.floor(((event.clientY-12)-fieldRef.current.offsetTop)/cellSize);
+      if (y > -1) changeCellType((y * width) + x);
+    };
+    addEventListener('mousemove', mouseEvent);
+
+    return () => removeEventListener('mousemove', mouseEvent);
+  }, [fill, width, changeCellType]);
+
+  useEffect(() => {
+    const mouseDown = (event: MouseEvent) => setFill(true);
+    const mouseUp = (event: MouseEvent) => setFill(false);
+
+    addEventListener('mousedown', mouseDown);
+    addEventListener('mouseup', mouseUp);
+
+    return () => {
+      removeEventListener('mousedown', mouseDown);
+      removeEventListener('mouseup', mouseUp);
+    };
+  });
 
   useEffect(() => {
     if (!started || !algo) return;
