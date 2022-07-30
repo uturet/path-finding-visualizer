@@ -3,7 +3,7 @@ import {AlgorithInterface, BFSAlgorithm, AstarAlgorithm, Point} from './Algorith
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
-const TIMEOUT = 10;
+const TIMEOUT = 30;
 const CELLSIZE = 48;
 const colorType: { disabled: string; start: string; end: string; used: string; default: string; } = {
   disabled: 'bg-slate-400',

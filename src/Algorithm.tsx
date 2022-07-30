@@ -78,9 +78,71 @@ export class BFSAlgorithm extends Algorithm {
   }
 }
 
+
+class Box {
+  parent?: number;
+  index: number;
+  point: Point;
+  g: number;
+  h: number;
+  f: number;
+
+  constructor(index: number, point: Point, parent?: number) {
+    this.parent = parent;
+    this.index = index;
+    this.point = point;
+    this.g = 0;
+    this.h = 0;
+    this.f = 0;
+  }
+}
+
+
 export class AstarAlgorithm extends Algorithm {
   static title = 'A*';
+  private around = [[1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1]];
+  private openList: Map<number, Box>;
+  private closedList: Map<number, Box>;
+  private startNode: Box;
+  private endNode: Box;
+
+  constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
+    super(width, height, startPoint, endPoint, usePoint);
+    this.openList = new Map();
+    this.closedList = new Map();
+    this.startNode = new Box(startPoint, this.indexToPoint(startPoint));
+    this.startNode.g = this.startNode.h = this.startNode.f = 0;
+    this.endNode = new Box(endPoint, this.indexToPoint(endPoint));
+    this.endNode.g = this.endNode.h = this.endNode.f = 0;
+    this.openList.set(startPoint, this.startNode);
+  }
+
   nextStep(count: number) {
-    return true;
+    if (this.openList.size == 0) return true;
+    let curNode = this.openList.values().next().value;
+    this.openList.forEach((n) => {
+      if (n.f < curNode.f) {
+        curNode = n;
+      }
+    });
+    this.openList.delete(curNode.index);
+    this.closedList.set(curNode.index, curNode);
+    if (curNode.index == this.endNode.index) return true;
+    this.getNewNodes(curNode);
+    return false;
+  }
+
+  getNewNodes(node: Box): void {
+    this.around.forEach((shift) => {
+      const p: Point = [node.point[0]+shift[0], node.point[1]+shift[1]];
+      const index = this.pointToIndex(p);
+      if (this.isValidPoint(p) && !this.openList.has(index) && !this.closedList.has(index) && this.usePoint(p)) {
+        const n = new Box(index, p, node.index);
+        n.g = node.g + 1;
+        n.h = ((n.point[0] - this.endNode.point[0])**2) + ((n.point[1] - this.endNode.point[1])**2);
+        n.f = node.g + node.h;
+        this.openList.set(n.index, n);
+      }
+    });
   }
 }
