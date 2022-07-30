@@ -56,13 +56,13 @@ export class BFSAlgorithm extends Algorithm {
     let index: number|undefined = this.nextPoints.keys().next().value;
     if (index === undefined) return true;
     let point = this.indexToPoint(index);
-    if (point[0] == this.endPoint[0] && point[1] == this.endPoint[1]) return true;
+    if (point[0] === this.endPoint[0] && point[1] === this.endPoint[1]) return true;
     this.nextPoints.delete(index);
     while (this.usedCells.has(index) || !this.usePoint(point)) {
       index = this.nextPoints.keys().next().value;
       if (index === undefined) return true;
       point = this.indexToPoint(index);
-      if (point[0] == this.endPoint[0] && point[1] == this.endPoint[1]) return true;
+      if (point[0] === this.endPoint[0] && point[1] === this.endPoint[1]) return true;
       this.nextPoints.delete(index);
     }
     this.usedCells.add(index);
@@ -105,6 +105,7 @@ export class AstarAlgorithm extends Algorithm {
   private closedList: Map<number, Box>;
   private startNode: Box;
   private endNode: Box;
+  private isEnd: boolean = false;
 
   constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
     super(width, height, startPoint, endPoint, usePoint);
@@ -118,7 +119,8 @@ export class AstarAlgorithm extends Algorithm {
   }
 
   nextStep(count: number) {
-    if (this.openList.size == 0) return true;
+    console.log(count, this.isEnd);
+    if (this.openList.size === 0 || this.isEnd) return true;
     let curNode = this.openList.values().next().value;
     this.openList.forEach((n) => {
       if (n.f < curNode.f) {
@@ -127,26 +129,30 @@ export class AstarAlgorithm extends Algorithm {
     });
     this.openList.delete(curNode.index);
     this.closedList.set(curNode.index, curNode);
-    if (curNode.index == this.endNode.index) return true;
+    if (curNode.index === this.endNode.index) return true;
     this.getNewNodes(curNode);
     return false;
   }
 
   getNewNodes(node: Box): void {
-    this.around.forEach((shift) => {
-      const p: Point = [node.point[0]+shift[0], node.point[1]+shift[1]];
+    for (let i=0; i<this.around.length; i++) {
+      const p: Point = [node.point[0]+this.around[i][0], node.point[1]+this.around[i][1]];
       const index = this.pointToIndex(p);
       if (this.usePoint(p) && this.isValidPoint(p)) {
         const n = new Box(index, p, node.index);
         n.g = node.g;
         n.h = ((n.point[0] - this.endNode.point[0])**2) + ((n.point[1] - this.endNode.point[1])**2);
         n.f = node.g + node.h;
+        if (index === this.endNode.index) {
+          this.openList.clear();
+          this.openList.set(n.index, n);
+        }
         if (this.closedList.has(n.index)) {
           if ((this.closedList.get(n.index) as Box).f > n.f) this.closedList.set(n.index, n);
         } else if (this.openList.has(n.index)) {
           if ((this.openList.get(n.index) as Box).f > n.f) this.openList.set(n.index, n);
         } else this.openList.set(n.index, n);
       }
-    });
+    }
   }
 }

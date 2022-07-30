@@ -63,12 +63,12 @@ function App() {
       'used': (index: number) => setUsedCells((prev) => new Set(prev.add(index))),
     };
     const curType = getCellType(index);
-    if (cellType == 'default' && curType == 'disabled') {
+    if (cellType === 'default' && curType === 'disabled') {
       disabledCells.delete(index);
       setDisabledCells(new Set(disabledCells));
-    } else if ((curType == 'default' || curType == 'used') && cellType != 'default') {
+    } else if ((curType === 'default' || curType === 'used') && cellType != 'default') {
       cellTypeDispatch[cellType](index);
-    } else if (cellType == 'start' || cellType == 'end') {
+    } else if (cellType === 'start' || cellType === 'end') {
       disabledCells.delete(index);
       setDisabledCells(new Set(disabledCells));
       cellTypeDispatch[cellType](index);
@@ -77,16 +77,8 @@ function App() {
 
   const cells = useMemo(() => {
     const cells = [];
-    const indexToPoint = (index: number) => {
-      const y = Math.floor(index/width);
-      const x = index - y*width;
-      return [x, y];
-    };
-    const endPo = indexToPoint(endPoint);
     for (let i=0; i<amount; i++) {
-      const curPo = indexToPoint(i);
       cells.push(<div
-        title={`${((curPo[0]-endPo[0])**2) + ((curPo[1]-endPo[1])**2)}`}
         key={i.toString()}
         onClick={() => changeCellType(i)}
         className={`w-10 h-10 m-1 rounded ${colorType[getCellType(i)]}`}/>);
@@ -118,7 +110,7 @@ function App() {
   useEffect(() => {
     if (!fieldRef.current) return;
     let width = fieldRef.current.offsetWidth / CELLSIZE;
-    width = width%10 == 0? width-1: Math.floor(width);
+    width = width%10 === 0? width-1: Math.floor(width);
     const height = Math.floor(fieldRef.current.offsetHeight / CELLSIZE);
     setWidth(width);
     setHeight(height);
@@ -172,12 +164,12 @@ function App() {
           </select>
         </div>
         {cellTypes.map((t) => {
-          if (t == 'used') return null;
+          if (t === 'used') return null;
           return <div
             title={t}
             key={t}
             onClick={() => setCellType(t)}
-            className={`w-10 h-10 m-1 rounded ${cellType == t && 'drop-shadow-md border-2'} border-slate-700 ${colorType[t]}`}/>;
+            className={`w-10 h-10 m-1 rounded ${cellType === t && 'drop-shadow-md border-2'} border-slate-700 ${colorType[t]}`}/>;
         })}
         <div
           onClick={startSearch}
