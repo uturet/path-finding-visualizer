@@ -27,15 +27,17 @@ function App() {
   const fieldRef = useRef<HTMLDivElement>(null);
 
   const indexToPoint = (index: number): Point => {
-    const y = Math.floor(index/height);
+    const y = Math.floor(index/width);
     const x = index - y*width;
     return [x, y];
   };
 
-  const usePoint = (point: Point): void => {
+  const usePoint = useCallback((point: Point): boolean => {
     const index = (point[1] * width) + point[0];
-    setUsedCells(new Set(usedCells.add(index)));
-  };
+    if (disabledCells.has(index)) return false;
+    setUsedCells((prev) => new Set(prev.add(index)));
+    return true;
+  }, [disabledCells, width]);
 
   useEffect(() => {
     if (!fieldRef.current) return;
@@ -43,16 +45,6 @@ function App() {
     setHeight(Math.floor((fieldRef.current.offsetHeight / cellSize)));
     setAmount(Math.floor((fieldRef.current.offsetWidth / cellSize)) * (Math.floor(fieldRef.current.offsetHeight / cellSize)));
   }, [fieldRef]);
-
-  useEffect(() => {
-    setAlgo(new BFSAlgorithm(
-      width,
-      height,
-      indexToPoint(startPoint),
-      indexToPoint(endPoint),
-      usePoint,
-    ));
-  }, [width, height]);
 
   const getCellType = useCallback((index: number): CellType => {
     if (disabledCells.has(index)) {
@@ -71,14 +63,14 @@ function App() {
     const cellTypeDispatch = {
       'start': (index: number) => setStartPoint(index),
       'end': (index: number) => setEndPoint(index),
-      'disabled': (index: number) => setDisabledCells(new Set(disabledCells.add(index))),
-      'used': (index: number) => setUsedCells(new Set(usedCells.add(index))),
+      'disabled': (index: number) => setDisabledCells((prev) => new Set(prev.add(index))),
+      'used': (index: number) => setUsedCells((prev) => new Set(prev.add(index))),
     };
     const curType = getCellType(index);
     if (cellType == 'default' && curType == 'disabled') {
       disabledCells.delete(index);
       setDisabledCells(new Set(disabledCells));
-    } else if (curType == 'default' && cellType != 'default') {
+    } else if ((curType == 'default' || curType == 'used') && cellType != 'default') {
       cellTypeDispatch[cellType](index);
     } else if (cellType == 'start' || cellType == 'end') {
       disabledCells.delete(index);
@@ -99,6 +91,13 @@ function App() {
   }, [amount, changeCellType, getCellType]);
 
   const startSearch = () => {
+    setAlgo(new BFSAlgorithm(
+      width,
+      height,
+      indexToPoint(startPoint),
+      indexToPoint(endPoint),
+      usePoint,
+    ));
     setCount(1);
     setUsedCells(new Set());
     setStarted(!started);
@@ -106,11 +105,14 @@ function App() {
 
   useEffect(() => {
     if (!started || !algo) return;
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       setCount((prev) => prev+1);
     }, 100);
 
-    if (algo.nextStep(count)) setStarted(false);
+    if (algo.nextStep(count)) {
+      clearTimeout(timeout);
+      setStarted(false);
+    }
   }, [count, started]);
 
   return (
