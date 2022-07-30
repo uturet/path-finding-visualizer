@@ -38,9 +38,12 @@ function App() {
 
   useEffect(() => {
     if (!fieldRef.current) return;
-    setWidth(Math.floor((fieldRef.current.offsetWidth / cellSize)));
-    setHeight(Math.floor((fieldRef.current.offsetHeight / cellSize)));
-    setAmount(Math.floor((fieldRef.current.offsetWidth / cellSize)) * (Math.floor(fieldRef.current.offsetHeight / cellSize)));
+    let width = fieldRef.current.offsetWidth / cellSize;
+    width = width%10 == 0? width-1: Math.floor(width);
+    const height = Math.floor(fieldRef.current.offsetHeight / cellSize);
+    setWidth(width);
+    setHeight(height);
+    setAmount(width*height);
   }, [fieldRef]);
 
   const getCellType = useCallback((index: number): CellType => {
@@ -95,7 +98,7 @@ function App() {
       endPoint,
       usePoint,
     ));
-    setCount(1);
+    setCount(0);
     setUsedCells(new Set());
     setStarted(!started);
   };
