@@ -3,7 +3,7 @@ import {AlgorithInterface, BFSAlgorithm, AstarAlgorithm, Point} from './Algorith
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
-const TIMEOUT = 30;
+const TIMEOUT = 50;
 const CELLSIZE = 48;
 const colorType: { disabled: string; start: string; end: string; used: string; default: string; } = {
   disabled: 'bg-slate-400',
@@ -16,6 +16,12 @@ const algorithms = [
   BFSAlgorithm,
   AstarAlgorithm,
 ];
+const calculateWidthHeight = (e: HTMLDivElement): [number, number] => {
+  let width = (e.offsetWidth-24) / CELLSIZE;
+  width = width%10 === 0? width-1: Math.floor(width);
+  const height = Math.floor(e.offsetHeight / CELLSIZE);
+  return [width, height];
+};
 const cellTypes: CellType[] = ['start', 'end', 'disabled', 'used', 'default'];
 
 function App() {
@@ -31,6 +37,7 @@ function App() {
   const [endPoint, setEndPoint] = useState<number>(1);
   const [disabledCells, setDisabledCells] = useState<Set<number>>(new Set());
   const [usedCells, setUsedCells] = useState<Set<number>>(new Set());
+  const windowRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
 
@@ -108,16 +115,6 @@ function App() {
   };
 
   useEffect(() => {
-    if (!fieldRef.current) return;
-    let width = fieldRef.current.offsetWidth / CELLSIZE;
-    width = width%10 === 0? width-1: Math.floor(width);
-    const height = Math.floor(fieldRef.current.offsetHeight / CELLSIZE);
-    setWidth(width);
-    setHeight(height);
-    setAmount(width*height);
-  }, [fieldRef]);
-
-  useEffect(() => {
     if (!fill) return;
     const mouseEvent = (event: MouseEvent) => {
       if (!fieldRef.current) return;
@@ -133,15 +130,38 @@ function App() {
   useEffect(() => {
     const mouseDown = (event: MouseEvent) => setFill(true);
     const mouseUp = (event: MouseEvent) => setFill(false);
+    const resize = (event: Event) => {
+      if (!windowRef.current || !fieldRef.current) return;
+      windowRef.current.style.height = `${window.innerHeight}px`;
+      setStarted(false);
+      setCount(1);
+      setUsedCells(new Set());
+      setDisabledCells(new Set());
+      const [width, height] = calculateWidthHeight(fieldRef.current);
+      setWidth(width);
+      setHeight(height);
+      setAmount(width*height);
+    };
 
+    addEventListener('resize', resize);
     addEventListener('mousedown', mouseDown);
     addEventListener('mouseup', mouseUp);
 
     return () => {
+      removeEventListener('resize', resize);
       removeEventListener('mousedown', mouseDown);
       removeEventListener('mouseup', mouseUp);
     };
   });
+
+  useEffect(() => {
+    if (!windowRef.current || !fieldRef.current) return;
+    windowRef.current.style.height = `${window.innerHeight}px`;
+    const [width, height] = calculateWidthHeight(fieldRef.current);
+    setWidth(width);
+    setHeight(height);
+    setAmount(width*height);
+  }, [windowRef, fieldRef]);
 
   useEffect(() => {
     if (!started || !algo) return;
@@ -156,10 +176,10 @@ function App() {
   }, [count, started, algo]);
 
   return (
-    <div className='w-screen h-screen flex flex-col overflow-hidden'>
+    <div ref={windowRef} className='w-screen flex flex-col overflow-hidden'>
       <div className='h=[30px] flex flex-row items-center justify-center'>
         <div className='h-10 m-1 px-3 text-white font-bold flex items-center'>
-          <span className='h-10 bg-cyan-400 p-2'>Algorithm</span>
+          <span className='h-10 bg-cyan-400 p-2 hidden md:block'>Algorithm</span>
           <select ref={selectRef} className='h-10 bg-cyan-400' name="algorithms" id="algorithms">
             {algorithms.map((a, i) => <option key={a.title} value={i}>{a.title}</option>)}
           </select>
@@ -186,7 +206,7 @@ function App() {
           <span>{count}</span>
         </div>
       </div>
-      <div ref={fieldRef} className='flex-grow h-full flex flex-row flex-wrap p-3'>
+      <div ref={fieldRef} className='flex-grow h-full flex justify-center flex-row flex-wrap p-3'>
         {cells}
       </div>
     </div>

@@ -53,13 +53,13 @@ export class BFSAlgorithm extends Algorithm {
   }
 
   nextStep(count: number): boolean {
-    let index: number|undefined = this.nextPoints.keys().next().value;
+    let index: number|undefined = this.nextPoints.values().next().value;
     if (index === undefined) return true;
     let point = this.indexToPoint(index);
     if (point[0] === this.endPoint[0] && point[1] === this.endPoint[1]) return true;
     this.nextPoints.delete(index);
     while (this.usedCells.has(index) || !this.usePoint(point)) {
-      index = this.nextPoints.keys().next().value;
+      index = this.nextPoints.values().next().value;
       if (index === undefined) return true;
       point = this.indexToPoint(index);
       if (point[0] === this.endPoint[0] && point[1] === this.endPoint[1]) return true;
@@ -121,24 +121,26 @@ export class AstarAlgorithm extends Algorithm {
   }
 
   nextStep(count: number) {
-    if (this.openList.size === 0) return true;
-    if (this.curIndex === 0) {
-      this.curNode = this.openList.values().next().value;
-      this.openList.forEach((n) => {
-        if (n.f < this.curNode.f) {
-          this.curNode = n;
-        }
-      });
-      this.openList.delete(this.curNode.index);
-      this.closedList.set(this.curNode.index, this.curNode);
+    while (true) {
+      if (this.openList.size === 0) return true;
+      if (this.curIndex === 0) {
+        this.curNode = this.openList.values().next().value;
+        this.openList.forEach((n) => {
+          if (n.f < this.curNode.f) {
+            this.curNode = n;
+          }
+        });
+        this.openList.delete(this.curNode.index);
+        this.closedList.set(this.curNode.index, this.curNode);
+      }
+      if (this.curNode.index === this.endNode.index) return true;
+      if (this.getNewNodes()) break;
     }
-    if (this.curNode.index === this.endNode.index) return true;
 
-    this.getNewNodes();
     return false;
   }
 
-  getNewNodes(): void {
+  getNewNodes(): boolean {
     for (let i=this.curIndex; i<8; i++) {
       const p: Point = [this.curNode.point[0]+this.around[this.curIndex][0], this.curNode.point[1]+this.around[this.curIndex][1]];
       const index = this.pointToIndex(p);
@@ -149,7 +151,7 @@ export class AstarAlgorithm extends Algorithm {
         n.f = n.g + n.h;
         if (index === this.endNode.index) {
           this.openList.clear();
-          return;
+          return false;
         }
         if (this.closedList.has(n.index)) {
           if ((this.closedList.get(n.index) as Node).f > n.f) this.closedList.set(n.index, n);
@@ -158,10 +160,11 @@ export class AstarAlgorithm extends Algorithm {
         } else {
           this.openList.set(n.index, n);
           this.curIndex = (this.curIndex+1) % 8;
-          break;
+          return true;
         };
       }
       this.curIndex = (this.curIndex+1) % 8;
     }
+    return false;
   }
 }
