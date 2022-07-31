@@ -3,7 +3,7 @@ import {AlgorithInterface, BFSAlgorithm, AstarAlgorithm, Point} from './Algorith
 
 type CellType = 'start'|'end'|'disabled'|'used'|'default'
 
-const TIMEOUT = 50;
+const TIMEOUT = 30;
 const CELLSIZE = 48;
 const colorType: { disabled: string; start: string; end: string; used: string; default: string; } = {
   disabled: 'bg-slate-400',
@@ -153,7 +153,7 @@ function App() {
       clearTimeout(timeout);
       setStarted(false);
     }
-  }, [count, started]);
+  }, [count, started, algo]);
 
   return (
     <div className='w-screen h-screen flex flex-col overflow-hidden'>
