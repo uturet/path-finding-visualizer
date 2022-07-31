@@ -123,7 +123,7 @@ function App() {
       if (!fieldRef.current) return;
       const x = Math.floor((event.clientX-12)/CELLSIZE);
       const y = Math.floor(((event.clientY-12)-fieldRef.current.offsetTop)/CELLSIZE);
-      if (y > -1) changeCellType((y * width) + x);
+      if (y > -1 && x > -1 && x < width) changeCellType((y * width) + x);
     };
     addEventListener('mousemove', mouseEvent);
 
@@ -159,6 +159,7 @@ function App() {
     <div className='w-screen h-screen flex flex-col overflow-hidden'>
       <div className='h=[30px] flex flex-row items-center justify-center'>
         <div className='h-10 m-1 px-3 text-white font-bold flex items-center'>
+          <span className='h-10 bg-cyan-400 p-2'>Algorithm</span>
           <select ref={selectRef} className='h-10 bg-cyan-400' name="algorithms" id="algorithms">
             {algorithms.map((a, i) => <option key={a.title} value={i}>{a.title}</option>)}
           </select>

@@ -15,11 +15,11 @@ abstract class Algorithm implements AlgorithInterface {
   protected usePoint: (point: Point) => boolean;
   protected usedCells: Set<number>;
 
-  constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
+  constructor(width: number, height: number, startIndex: number, endIndex: number, usePoint: (pos: Point) => boolean) {
     this.width = width;
     this.height = height;
-    this.startPoint = this.indexToPoint(startPoint);
-    this.endPoint = this.indexToPoint(endPoint);
+    this.startPoint = this.indexToPoint(startIndex);
+    this.endPoint = this.indexToPoint(endIndex);
     this.usePoint = usePoint;
     this.usedCells = new Set<number>();
   }
@@ -46,8 +46,8 @@ export class BFSAlgorithm extends Algorithm {
   private around = [[1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1]];
   private nextPoints: Set<number>;
 
-  constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
-    super(width, height, startPoint, endPoint, usePoint);
+  constructor(width: number, height: number, startIndex: number, endIndex: number, usePoint: (pos: Point) => boolean) {
+    super(width, height, startIndex, endIndex, usePoint);
     this.nextPoints = new Set();
     this.nextPoints.add(this.pointToIndex(this.startPoint));
   }
@@ -79,7 +79,7 @@ export class BFSAlgorithm extends Algorithm {
 }
 
 
-class Box {
+class Node {
   parent?: number;
   index: number;
   point: Point;
@@ -101,26 +101,24 @@ class Box {
 export class AstarAlgorithm extends Algorithm {
   static title = 'A*';
   private around = [[1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1]];
-  private openList: Map<number, Box>;
-  private closedList: Map<number, Box>;
-  private startNode: Box;
-  private endNode: Box;
-  private isEnd: boolean = false;
+  private openList: Map<number, Node>;
+  private closedList: Map<number, Node>;
+  private startNode: Node;
+  private endNode: Node;
 
-  constructor(width: number, height: number, startPoint: number, endPoint: number, usePoint: (pos: Point) => boolean) {
-    super(width, height, startPoint, endPoint, usePoint);
+  constructor(width: number, height: number, startIndex: number, endIndex: number, usePoint: (pos: Point) => boolean) {
+    super(width, height, startIndex, endIndex, usePoint);
     this.openList = new Map();
     this.closedList = new Map();
-    this.startNode = new Box(startPoint, this.indexToPoint(startPoint));
+    this.startNode = new Node(startIndex, this.indexToPoint(startIndex));
     this.startNode.g = this.startNode.h = this.startNode.f = 0;
-    this.endNode = new Box(endPoint, this.indexToPoint(endPoint));
+    this.endNode = new Node(endIndex, this.indexToPoint(endIndex));
     this.endNode.g = this.endNode.h = this.endNode.f = 0;
-    this.openList.set(startPoint, this.startNode);
+    this.openList.set(startIndex, this.startNode);
   }
 
   nextStep(count: number) {
-    console.log(count, this.isEnd);
-    if (this.openList.size === 0 || this.isEnd) return true;
+    if (this.openList.size === 0) return true;
     let curNode = this.openList.values().next().value;
     this.openList.forEach((n) => {
       if (n.f < curNode.f) {
@@ -134,23 +132,23 @@ export class AstarAlgorithm extends Algorithm {
     return false;
   }
 
-  getNewNodes(node: Box): void {
+  getNewNodes(node: Node): void {
     for (let i=0; i<this.around.length; i++) {
       const p: Point = [node.point[0]+this.around[i][0], node.point[1]+this.around[i][1]];
       const index = this.pointToIndex(p);
       if (this.usePoint(p) && this.isValidPoint(p)) {
-        const n = new Box(index, p, node.index);
-        n.g = node.g;
+        const n = new Node(index, p, node.index);
+        n.g = node.g+1;
         n.h = ((n.point[0] - this.endNode.point[0])**2) + ((n.point[1] - this.endNode.point[1])**2);
-        n.f = node.g + node.h;
+        n.f = n.g + n.h;
         if (index === this.endNode.index) {
           this.openList.clear();
           this.openList.set(n.index, n);
         }
         if (this.closedList.has(n.index)) {
-          if ((this.closedList.get(n.index) as Box).f > n.f) this.closedList.set(n.index, n);
+          if ((this.closedList.get(n.index) as Node).f > n.f) this.closedList.set(n.index, n);
         } else if (this.openList.has(n.index)) {
-          if ((this.openList.get(n.index) as Box).f > n.f) this.openList.set(n.index, n);
+          if ((this.openList.get(n.index) as Node).f > n.f) this.openList.set(n.index, n);
         } else this.openList.set(n.index, n);
       }
     }
