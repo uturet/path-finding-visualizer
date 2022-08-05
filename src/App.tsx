@@ -141,6 +141,12 @@ function App() {
       setWidth(width);
       setHeight(height);
       setAmount(width*height);
+      setStartPoint(0);
+      setEndPoint((width*height)-1);
+      for (let i=0; i<width; i++) {
+        const d = Math.floor(Math.random()*((width*height)-3))+1;
+        setDisabledCells(new Set(disabledCells.add(d)));
+      }
     };
 
     addEventListener('resize', resize);
@@ -161,6 +167,15 @@ function App() {
     setWidth(width);
     setHeight(height);
     setAmount(width*height);
+    setStartPoint(0);
+    setEndPoint((width*height)-1);
+    for (let i=0; i<width/2; i++) {
+      const d = Math.floor(Math.random()*((width*height)-3))+1;
+      disabledCells.add(d);
+      disabledCells.add(d+width);
+      disabledCells.add(d+(width*2));
+      setDisabledCells(new Set(disabledCells));
+    }
   }, [windowRef, fieldRef]);
 
   useEffect(() => {
